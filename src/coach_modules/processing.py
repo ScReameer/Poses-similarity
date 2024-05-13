@@ -7,10 +7,11 @@ DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # Abstract class
 class Processor:
-    def __init__(self) -> None:
+    def __init__(self, frame_rate=1) -> None:
         self.transforms = T.Compose([
             T.ToTensor()
         ])
+        self.frame_rate = frame_rate
         
     def __call__(self, path:str):
         return self._process(path)
@@ -32,13 +33,13 @@ class ImagePreprocessor(Processor):
     
 # Video preprocessor
 class VideoPreprocessor(Processor):
-    def __init__(self) -> None:
+    def __init__(self, ) -> None:
         super().__init__()
     
     def _process(self, video_path:str):
-        dataset = VideoDataset(video_path=video_path, transform=self.transforms)
-        # [4, H, W, C]
-        dataloader = DataLoader(dataset=dataset, batch_size=4, shuffle=False)
+        dataset = VideoDataset(video_path=video_path, transform=self.transforms, frame_rate=self.frame_rate)
+        # [1, H, W, C]
+        dataloader = DataLoader(dataset=dataset, batch_size=1, shuffle=False)
         return dataloader
 
 # Auxiliary dataset class for video processing
@@ -48,23 +49,22 @@ class VideoDataset(Dataset):
         self.cap = cv.VideoCapture(video_path)
         self.frame_rate = frame_rate
         self.transform = transform
-        self.length = int(self.cap.get(cv.CAP_PROP_FRAME_COUNT))
+        self.frames = []
+        frame_counter = 0
         
+        while self.cap.isOpened():
+            ret, frame = self.cap.read()
+            if not ret:
+                break
+            frame_counter += 1
+            if frame_counter % frame_rate == 0:
+                self.frames.append(cv.cvtColor(frame, cv.COLOR_BGR2RGB))
 
     def __len__(self):
-        return self.length
+        return len(self.frames)
 
     def __getitem__(self, idx):
-        if idx >= self.length:
-            return None
-        self.cap.set(cv.CAP_PROP_POS_FRAMES, idx)
-        success, frame = self.cap.read()
-        if not success:
-            return None
-        frame = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
-        if self.transform is not None:
-            frame = self.transform(frame).to(DEVICE)
-        return frame
-
-    def close(self):
-        self.cap.release()
+        frame = self.frames[idx]
+        if self.transform:
+            frame = self.transform(frame)
+        return frame.to(DEVICE)
