@@ -23,9 +23,9 @@ class ImagePreprocessor(Processor):
     def __init__(self) -> None:
         super().__init__()
     
-    def _process(self, img_path: str) -> DataLoader:
+    def _process(self, img_path: str, *args, **kwds) -> DataLoader:
         rgb_img = cv.cvtColor(cv.imread(img_path), cv.COLOR_BGR2RGB)
-        # [1, H, W, C]
+        # [1, C, H, W]
         single_image = self.transforms(rgb_img).to(DEVICE)[None, ...]
         dataloader = DataLoader(single_image, batch_size=1, shuffle=False)
         return dataloader
@@ -37,7 +37,7 @@ class VideoPreprocessor(Processor):
 
     def _process(self, video_path: str, frame_rate=1, batch_size=1) -> DataLoader:
         dataset = VideoDataset(video_path=video_path, transform=self.transforms, frame_rate=frame_rate)
-        # [1, H, W, C]
+        # [B, C, H, W]
         dataloader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=False)
         return dataloader
 

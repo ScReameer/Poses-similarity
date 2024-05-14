@@ -2,12 +2,17 @@ import torch
 from torch.nn.functional import cosine_similarity, mse_loss, l1_loss
 
 # Abstract class
-class PoseSimilarity:
+class Metric:
     def __init__(self) -> None:
         pass
     
     def __call__(self, *nn_output, **kwds):
-        return self._compute(**self._prepare(*nn_output, **kwds))
+        prepared = self._prepare(*nn_output, **kwds)
+        # Compute metric only if all detections (ref and actual) is not None
+        if prepared:
+            return self._compute(prepared)
+        # Return None
+        return prepared
     
     def _prepare(self, reference_output: list, actual_output: list) -> dict:
         reliable_detections_ref = []
@@ -51,10 +56,10 @@ class PoseSimilarity:
             actual_poses[..., :-1]
         )
     
-    def _compute(self, **processed_poses):
+    def _compute(self, prepared_poses: dict):
         pass
 
-class ObjectKeypointSimilarity(PoseSimilarity):
+class ObjectKeypointSimilarity(Metric):
     def __init__(self) -> None:
         super().__init__()
         self.sigma = (
@@ -69,8 +74,8 @@ class ObjectKeypointSimilarity(PoseSimilarity):
             ) / 10.0
         )
     
-    def _compute(self, eps=1e-7, **processed_poses) -> torch.Tensor:
-        reference_pose, actual_pose, boxes = processed_poses.values()
+    def _compute(self, prepared_poses: dict, eps=1e-7) -> torch.Tensor:
+        reference_pose, actual_pose, boxes = prepared_poses.values()
         sigma = self.sigma.to(reference_pose.device)
         area = (boxes[..., 2] - boxes[..., 0]) * (boxes[..., 3] - boxes[..., 1])
         d = (reference_pose[:, None, :, 0] - actual_pose[..., 0]).pow(2) + (reference_pose[:, None, :, 1] - actual_pose[..., 1]).pow(2)  # (N, M, 17)
@@ -80,30 +85,30 @@ class ObjectKeypointSimilarity(PoseSimilarity):
         oks = ((-e).exp() * kpt_mask[:, None]).sum(-1) / (kpt_mask.sum(-1)[:, None] + eps)
         return oks.diag().mean()
 
-class CosineSimilarity(PoseSimilarity):
+class CosineSimilarity(Metric):
     def __init__(self) -> None:
         super().__init__()
 
-    def _compute(self, **processed_poses) -> torch.Tensor:
-        reference_pose, actual_pose = self._drop_visibility(processed_poses['reference'], processed_poses['actual'])
+    def _compute(self, prepared_poses) -> torch.Tensor:
+        reference_pose, actual_pose = self._drop_visibility(prepared_poses['reference'], prepared_poses['actual'])
         cossim = cosine_similarity(reference_pose, actual_pose).mean()
         return cossim
         
-class RMSE(PoseSimilarity):
+class RMSE(Metric):
     def __init__(self) -> None:
         super().__init__()
 
-    def _compute(self, **processed_poses) -> torch.Tensor:
-        reference_pose, actual_pose = self._drop_visibility(processed_poses['reference'], processed_poses['actual'])
+    def _compute(self, prepared_poses) -> torch.Tensor:
+        reference_pose, actual_pose = self._drop_visibility(prepared_poses['reference'], prepared_poses['actual'])
         rmse = torch.sqrt(mse_loss(reference_pose, actual_pose))
         return rmse
     
-class MAE(PoseSimilarity):
+class MAE(Metric):
     def __init__(self) -> None:
         super().__init__()
 
-    def _compute(self, **processed_poses) -> torch.Tensor:
-        reference_pose, actual_pose = self._drop_visibility(processed_poses['reference'], processed_poses['actual'])
+    def _compute(self, prepared_poses) -> torch.Tensor:
+        reference_pose, actual_pose = self._drop_visibility(prepared_poses['reference'], prepared_poses['actual'])
         mae = l1_loss(reference_pose, actual_pose)
         return mae
         
