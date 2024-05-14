@@ -9,6 +9,6 @@ class KeypointDetector(torch.nn.Module):
             weights=models.detection.keypoint_rcnn.KeypointRCNN_ResNet50_FPN_Weights.DEFAULT
         ).eval().to(self.device)
     
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> list:
         with torch.no_grad():
             return self.detector(x)
