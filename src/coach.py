@@ -34,6 +34,7 @@ class VirtualCoach:
         self.cosine_similarity = CosineSimilarity()
         self.rmse = RMSE()
         self.mae = MAE()
+        self.threshold = 0.7
         
     def __call__(self, *args, **kwds):
         return self.compare_poses(*args, **kwds)
@@ -54,6 +55,11 @@ class VirtualCoach:
         cossim_sum = .0
         rmse_sum = .0
         mae_sum = .0
+        height = min(next(iter(ref_dl)).shape[-2], next(iter(actual_dl)).shape[-2])
+        width = min(next(iter(ref_dl)).shape[-1], next(iter(actual_dl)).shape[-1])
+        output_width = width * 2
+        fourcc = cv.VideoWriter_fourcc(*'XVID')
+        video_writer = cv.VideoWriter('output.avi', fourcc, 30, (output_width, height))
         # Every batch have shape [B, C, H, W]
         for ref_batch, actual_batch in zip(ref_dl, actual_dl):
             # Forward pass through network
@@ -67,7 +73,7 @@ class VirtualCoach:
             # This means that the network has not found any pose on at least one of the frames
             if any(map(lambda x: x is None, [oks, cossim, rmse, mae])):
                 continue
-            # self._draw_comparison(ref_batch, actual_batch, nn_output)
+            self._write(ref_batch, actual_batch, nn_output, video_writer, oks, cossim, rmse, mae)
             # Summarize metrics
             oks_sum += oks.cpu().item()
             cossim_sum += cossim.cpu().item()
@@ -85,25 +91,50 @@ class VirtualCoach:
             'MAE': mae_sum
         }
     
-    def _draw_comparison(self, ref_batch:torch.Tensor, actual_batch:torch.Tensor, nn_output):
+    def _write(
+        self, 
+        ref_batch: torch.Tensor,
+        actual_batch: torch.Tensor,
+        nn_output: dict,
+        video_writer: cv.VideoWriter,
+        *metrics
+    ):
+        metrics = list(map(lambda x: round(x.cpu().item(), 2), metrics))
         ref_img = ref_batch[0].cpu()
         act_img = actual_batch[0].cpu()
-        # px.imshow(
-        #     self._draw_skeleton(
-        #         img=ref_img,
-        #         all_keypoints=nn_output[0][0]['keypoints'],
-        #     ),
-        #     width=ref_img.shape[2],
-        #     height=ref_img.shape[1]
-        # ).show()
-        # px.imshow(
-        #     self._draw_skeleton(
-        #         img=act_img,
-        #         all_keypoints=nn_output[1][0]['keypoints'],
-        #     ),
-        #     width=act_img.shape[2],
-        #     height=act_img.shape[1]
-        # ).show()
+        ref_img_skeleton = self._draw_skeleton(
+            img=ref_img,
+            all_keypoints=nn_output[0][0]['keypoints'],
+        )
+        act_img_skeleton = self._draw_skeleton(
+            img=act_img,
+            all_keypoints=nn_output[1][0]['keypoints'],
+        )
+        combined_frames = self._combine(ref_img_skeleton, act_img_skeleton, metrics)
+        video_writer.write(combined_frames)
+        
+    def _combine(self, ref_img: np.ndarray, act_img: np.ndarray, metrics: tuple):
+        act_img_resized = cv.resize(
+            act_img,
+            dsize=ref_img.shape[:-1][::-1],
+            interpolation=cv.INTER_LINEAR
+        )
+        combined_img = np.hstack((ref_img[..., ::-1], act_img_resized[..., ::-1]))
+        if metrics[0] > self.threshold:
+            color = (0, 255, 0)
+        else:
+            color = (0, 0, 255)
+        oks, cossim, rmse, mae = metrics
+        cv.putText(
+            combined_img, 
+            text=f'OKS={oks}, CosSim={cossim}, RMSE={rmse}, MAE={mae}',
+            org=(0, combined_img.shape[0] - 10), 
+            color=color, 
+            fontFace=cv.FONT_HERSHEY_TRIPLEX, 
+            fontScale=1,
+            thickness=2
+        )
+        return combined_img
     
     def _draw_skeleton(self, img: torch.Tensor, all_keypoints: torch.Tensor) -> np.ndarray:
         connectivity = self._get_limbs(self.keypoints)
