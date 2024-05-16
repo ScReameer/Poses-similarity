@@ -30,6 +30,12 @@ class VirtualCoach:
         # Pretrained model
         self.keypoint_detector = KeypointDetector()
         # Metrics
+        self.metrics = {
+            'OKS': ObjectKeypointSimilarity(),
+            'CosSim': CosineSimilarity(),
+            'RMSE': RMSE(),
+            'MAE': MAE()
+        }
         self.oks = ObjectKeypointSimilarity()
         self.cosine_similarity = CosineSimilarity()
         self.rmse = RMSE()
@@ -55,6 +61,7 @@ class VirtualCoach:
         cossim_sum = .0
         rmse_sum = .0
         mae_sum = .0
+        # 
         height = min(next(iter(ref_dl)).shape[-2], next(iter(actual_dl)).shape[-2])
         width = min(next(iter(ref_dl)).shape[-1], next(iter(actual_dl)).shape[-1])
         output_width = width * 2
@@ -73,6 +80,7 @@ class VirtualCoach:
             # This means that the network has not found any pose on at least one of the frames
             if any(map(lambda x: x is None, [oks, cossim, rmse, mae])):
                 continue
+            # Make new video with a drawn skeleton and metrics
             self._write(ref_batch, actual_batch, nn_output, video_writer, oks, cossim, rmse, mae)
             # Summarize metrics
             oks_sum += oks.cpu().item()
@@ -100,18 +108,21 @@ class VirtualCoach:
         *metrics
     ):
         metrics = list(map(lambda x: round(x.cpu().item(), 2), metrics))
-        ref_img = ref_batch[0].cpu()
-        act_img = actual_batch[0].cpu()
-        ref_img_skeleton = self._draw_skeleton(
-            img=ref_img,
-            all_keypoints=nn_output[0][0]['keypoints'],
-        )
-        act_img_skeleton = self._draw_skeleton(
-            img=act_img,
-            all_keypoints=nn_output[1][0]['keypoints'],
-        )
-        combined_frames = self._combine(ref_img_skeleton, act_img_skeleton, metrics)
-        video_writer.write(combined_frames)
+        # for ref_frame, act_frame in zip(ref_batch, actual_batch):
+        min_batch_size = min(len(ref_batch), len(actual_batch))
+        for batch_idx in range(min_batch_size):
+            ref_img = ref_batch[batch_idx].cpu()
+            act_img = actual_batch[batch_idx].cpu()
+            ref_img_skeleton = self._draw_skeleton(
+                img=ref_img,
+                all_keypoints=nn_output[0][batch_idx]['keypoints'],
+            )
+            act_img_skeleton = self._draw_skeleton(
+                img=act_img,
+                all_keypoints=nn_output[1][batch_idx]['keypoints'],
+            )
+            combined_frames = self._combine(ref_img_skeleton, act_img_skeleton, metrics)
+            video_writer.write(combined_frames)
         
     def _combine(self, ref_img: np.ndarray, act_img: np.ndarray, metrics: tuple):
         act_img_resized = cv.resize(
@@ -149,7 +160,7 @@ class VirtualCoach:
             width=3,
             colors=(0, 255, 255)
         )
-
+        # [3, H, W]: float -> [H, W, 3]: uint8
         return (drawed.permute(1, 2, 0).cpu() * 255).numpy().astype(np.uint8)
     
     def _get_limbs(self, keypoints: dict) -> list:
