@@ -113,7 +113,7 @@ class MAE(Metric):
         return mae
         
 # # Weighted distance class
-# class WeightedDistance(PoseSimilarity):
+# class WeightedDistance(Metric):
 #     def __init__(self) -> None:
 #         super().__init__()
         
