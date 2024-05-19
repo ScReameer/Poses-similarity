@@ -36,8 +36,8 @@ class Writer:
             text_color = (0, 0, 255) # red
             success_text = 'Bad'
         outline_color = (0, 0, 0)
-        oks, rmse = metrics
-        metrics_text = f'OKS={oks}, RMSE={rmse}'
+        oks, rmse, cossim, wd = metrics
+        metrics_text = f'OKS={oks}, RMSE={rmse}, CosSim={cossim}, WD={wd}'
         metrics_position = (0, combined_img.shape[0] - 10) # 10px up from left down corner
         success_position = (0, combined_img.shape[0] - 50) # 50px up from left down corner
         # Add colored text with outline
@@ -128,11 +128,11 @@ class Writer:
             # Draw skeleton on frames
             ref_img_skeleton = self._draw_skeleton(
                 img=ref_img,
-                all_keypoints=nn_output[0][batch_idx]['keypoints'],
+                all_keypoints=nn_output['reference_output'][batch_idx]['keypoints'],
             )
             act_img_skeleton = self._draw_skeleton(
                 img=act_img,
-                all_keypoints=nn_output[1][batch_idx]['keypoints'],
+                all_keypoints=nn_output['actual_output'][batch_idx]['keypoints'],
             )
             # Draw metrics and merge 2 frames into one by width
             combined_frames = self._combine(ref_img_skeleton, act_img_skeleton, metrics)
