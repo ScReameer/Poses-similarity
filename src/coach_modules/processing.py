@@ -35,7 +35,7 @@ class VideoPreprocessor(Processor):
     def __init__(self) -> None:
         super().__init__()
 
-    def _process(self, video_path: str, frame_rate=1, batch_size=1) -> DataLoader:
+    def _process(self, video_path: str, frame_rate: int, batch_size: int) -> DataLoader:
         dataset = VideoDataset(video_path=video_path, transform=self.transforms, frame_rate=frame_rate)
         # [B, C, H, W]
         dataloader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=False)

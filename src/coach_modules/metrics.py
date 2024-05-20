@@ -7,61 +7,66 @@ class Metric:
         pass
     
     def __call__(self, **nn_output):
-        prepared = self._prepare(**nn_output)
-        # Compute metric only if all detections (ref and actual) is not None
-        if prepared:
-            return self._compute(prepared)
-        # Return None
-        return prepared
-    
-    def _prepare(self, reference_output: list, actual_output: list) -> dict:
-        reliable_detections_ref = []
-        reliable_detections_ref_boxes = []
-        reliable_detections_actual = []
-        reliable_confs = []
-
         with torch.no_grad():
-            for ref_frame, actual_frame in zip(reference_output, actual_output):
-                frame_best_idx = [0]
-                if any(map(lambda x: len(x) == 0, [ref_frame['keypoints'], actual_frame['keypoints']])):
-                    return None
-                ref_kps = ref_frame['keypoints'][frame_best_idx]
-                ref_boxes = ref_frame['boxes'][frame_best_idx]
-                act_kps = actual_frame['keypoints'][frame_best_idx]
-                conf = ref_frame['keypoints_scores'][frame_best_idx]
-                reliable_confs.append(conf)
-                reliable_detections_ref.append(ref_kps)
-                reliable_detections_actual.append(act_kps)
-                reliable_detections_ref_boxes.append(ref_boxes)
-
-            ref_output = torch.cat(reliable_detections_ref, dim=0)
-            box_output = torch.cat(reliable_detections_ref_boxes, dim=0)
-            act_output = torch.cat(reliable_detections_actual, dim=0)
-            confs_output = torch.cat(reliable_confs, dim=0)
-            affine_output = self._affine_transform(ref_output, act_output)
-            return {
-                'reference': affine_output[0],
-                'actual': affine_output[1],
-                'boxes': box_output,
-                'confs': confs_output
-            }
-            
-    def _affine_transform(self, reference_poses: torch.Tensor, actual_poses: torch.Tensor) -> tuple:
-        ref_visibility, actual_visibility = reference_poses[..., -1:], actual_poses[..., -1:]
-        reference_poses, actual_poses = self._drop_visibility(reference_poses, actual_poses)
-        # AX = B, where A - actual pose, X - affine matrix, B - reference pose
-        affine_matrix = torch.linalg.lstsq(actual_poses, reference_poses).solution
-        transformed_actual_poses = actual_poses @ affine_matrix
-        reference_poses = torch.cat([reference_poses, ref_visibility], dim=-1)
-        transformed_actual_poses = torch.cat([transformed_actual_poses, actual_visibility], dim=-1)
-        return reference_poses, transformed_actual_poses
+            prepared = self._prepare(**nn_output)
+            # Compute metric only if all detections (reference and actual) is not None
+            if prepared:
+                return self._compute(prepared)
+            # Return None
+            return prepared
     
     def _drop_visibility(self, reference_poses: torch.Tensor, actual_poses: torch.Tensor) -> tuple:
         return (
             reference_poses[..., :-1],
             actual_poses[..., :-1]
         )
+        
+    def _affine_transform(self, reference_poses: torch.Tensor, actual_poses: torch.Tensor) -> tuple:
+        # Separate [x, y] points and [visibility] vector 
+        reference_visibility, actual_visibility = reference_poses[..., -1:], actual_poses[..., -1:]
+        reference_poses, actual_poses = self._drop_visibility(reference_poses, actual_poses)
+        # AX = B, where A - actual pose, X - affine matrix, B - reference pose
+        affine_matrix = torch.linalg.lstsq(actual_poses, reference_poses).solution
+        transformed_actual_poses = actual_poses @ affine_matrix
+        # Return visibility vector
+        reference_poses = torch.cat([reference_poses, reference_visibility], dim=-1)
+        transformed_actual_poses = torch.cat([transformed_actual_poses, actual_visibility], dim=-1)
+        return {
+            'reference': reference_poses, 
+            'actual': transformed_actual_poses
+        }
     
+    def _prepare(self, reference_output: list, actual_output: list) -> dict:
+        reliable_detections_reference = []
+        reliable_detections_reference_boxes = []
+        reliable_detections_actual = []
+        reliable_kpts_scores = []
+
+        for reference_frame, actual_frame in zip(reference_output, actual_output):
+            frame_best_idx = [0]
+            if any(map(lambda x: len(x) == 0, [reference_frame['keypoints'], actual_frame['keypoints']])):
+                return None
+            reference_kpts = reference_frame['keypoints'][frame_best_idx]
+            reference_boxes = reference_frame['boxes'][frame_best_idx]
+            actual_kpts = actual_frame['keypoints'][frame_best_idx]
+            kpts_scores = reference_frame['keypoints_scores'][frame_best_idx]
+            reliable_kpts_scores.append(kpts_scores)
+            reliable_detections_reference.append(reference_kpts)
+            reliable_detections_actual.append(actual_kpts)
+            reliable_detections_reference_boxes.append(reference_boxes)
+
+        reference_output = torch.cat(reliable_detections_reference, dim=0)
+        box_output = torch.cat(reliable_detections_reference_boxes, dim=0)
+        act_output = torch.cat(reliable_detections_actual, dim=0)
+        confs_output = torch.cat(reliable_kpts_scores, dim=0)
+        affine_output = self._affine_transform(reference_output, act_output)
+        return {
+            'reference': affine_output['reference'],
+            'actual': affine_output['actual'],
+            'boxes': box_output,
+            'kpts_scores': confs_output
+        }
+
     def _compute(self, prepared_poses: dict):
         pass
 
@@ -126,15 +131,15 @@ class WeightedDistance(Metric):
         super().__init__()
      
     def _compute(self, prepared_poses):
-        # D(U,V) = (1 / sum(conf1)) * sum(conf1 * ||pose1 - pose2||) = sum1 * sum2
+        # WD(pose1, pose2) = (1 / sum(conf1)) * sum(conf1 * ||pose1 - pose2||) = sum1 * sum2
         reference_pose, actual_pose = self._drop_visibility(prepared_poses['reference'], prepared_poses['actual'])
-        confidence = prepared_poses['confs']
+        confidence = prepared_poses['kpts_scores']
         sum1 = 1 / confidence.sum()
+        # [B, 17] -> [B, 17, 2] with same weights for X and Y coordinates
         confidence = torch.cat([
             confidence[..., None],
             confidence[..., None]
         ], dim=-1)
         sum2 = torch.sum(confidence * torch.abs((reference_pose - actual_pose)))
-        
         weighted_dist = sum1 * sum2
         return weighted_dist

@@ -5,7 +5,7 @@ from torchvision.utils import draw_keypoints
 
 class Writer:
     def __init__(self, oks_threshold) -> None:
-        self.keypoints = [
+        self.KEYPOINTS = [
             'nose','left_eye','right_eye',
             'left_ear','right_ear','left_shoulder',
             'right_shoulder','left_elbow','right_elbow',
@@ -17,29 +17,29 @@ class Writer:
 
     def _combine(
         self, 
-        ref_img: np.ndarray,
-        act_img: np.ndarray,
-        metrics: tuple
+        reference_frame: np.ndarray,
+        actual_frame: np.ndarray,
+        metrics: dict
     ) -> np.ndarray:
         # Resize actual frame to the reference frame size
-        act_img_resized = cv.resize(
-            act_img,
-            dsize=ref_img.shape[:-1][::-1],
+        actual_frame_resized = cv.resize(
+            actual_frame,
+            dsize=reference_frame.shape[:-1][::-1],
             interpolation=cv.INTER_LINEAR
         )
-        # Stack images by width
-        combined_img = np.hstack((ref_img[..., ::-1], act_img_resized[..., ::-1]))
-        if metrics[0] >= self.oks_threshold:
+        # Stack frames by width
+        combined_frame = np.hstack((reference_frame[..., ::-1], actual_frame_resized[..., ::-1]))
+        if metrics['OKS'] >= self.oks_threshold:
             text_color = (0, 255, 0) # green
             success_text = 'Good'
         else:
             text_color = (0, 0, 255) # red
             success_text = 'Bad'
         outline_color = (0, 0, 0)
-        oks, rmse, cossim, wd = metrics
-        metrics_text = f'OKS={oks}, RMSE={rmse}, CosSim={cossim}, WD={wd}'
-        metrics_position = (0, combined_img.shape[0] - 10) # 10px up from left down corner
-        success_position = (0, combined_img.shape[0] - 50) # 50px up from left down corner
+        # 'metric_name: metric_value ...'
+        metrics_text = ' '.join([f'{k}={v:.2f}' for k, v in metrics.items()])
+        metrics_position = (0, combined_frame.shape[0] - 10) # 10px up from left down corner
+        success_position = (0, combined_frame.shape[0] - 50) # 50px up from left down corner
         # Add colored text with outline
         for text_to_add, position in zip(
             [success_text, metrics_text], 
@@ -47,7 +47,7 @@ class Writer:
         ):
             # Add text outline
             cv.putText(
-                combined_img,
+                combined_frame,
                 text=text_to_add,
                 org=position,
                 color=outline_color,
@@ -57,7 +57,7 @@ class Writer:
             )
             # Add colored text
             cv.putText(
-                combined_img,
+                combined_frame,
                 text=text_to_add,
                 org=position,
                 color=text_color,
@@ -65,7 +65,7 @@ class Writer:
                 fontScale=1,
                 thickness=2
             )
-        return combined_img
+        return combined_frame
         
     def _get_joint_connections(self, keypoints: dict) -> list:
         limbs = [
@@ -90,16 +90,16 @@ class Writer:
         
     def _draw_skeleton(
         self, 
-        img: torch.Tensor,
+        frame: torch.Tensor,
         all_keypoints: torch.Tensor
     ) -> np.ndarray:
         
-        joint_connections = self._get_joint_connections(self.keypoints)
-        kpts = all_keypoints[..., :-1][0][None, ...] # [1, 17, 2]
+        joint_connections = self._get_joint_connections(self.KEYPOINTS)
+        keypoints = all_keypoints[..., :-1][0][None, ...] # [1, 17, 2]
         visibility = all_keypoints[..., -1:][0][None, ...] # [1, 17, 1]
-        drawed = draw_keypoints(
-            img,
-            keypoints=kpts,
+        result = draw_keypoints(
+            frame,
+            keypoints=keypoints,
             visibility=visibility,
             connectivity=joint_connections,
             radius=5,
@@ -107,35 +107,38 @@ class Writer:
             colors=(0, 255, 255)
         )
         # [3, H, W]: float -> [H, W, 3]: uint8
-        return (drawed.permute(1, 2, 0).cpu() * 255).numpy().astype(np.uint8)    
+        return (result.permute(1, 2, 0).cpu() * 255).numpy().astype(np.uint8)    
     
     def write(
         self, 
-        ref_batch: torch.Tensor,
+        reference_batch: torch.Tensor,
         actual_batch: torch.Tensor,
         nn_output: dict,
-        metrics: list,
+        metrics: dict,
         video_writer: cv.VideoWriter,
         name: str
     ) -> None:
         # Round metrics to 2nd decimal
-        metrics = list(map(lambda x: round(x.cpu().item(), 2), metrics))
-        min_batch_size = min(len(ref_batch), len(actual_batch))
+        min_batch_size = min(len(reference_batch), len(actual_batch))
         for batch_idx in range(min_batch_size):
             # Take frames from batches
-            ref_img = ref_batch[batch_idx].cpu()
-            act_img = actual_batch[batch_idx].cpu()
+            reference_frame = reference_batch[batch_idx].cpu()
+            actual_frame = actual_batch[batch_idx].cpu()
             # Draw skeleton on frames
-            ref_img_skeleton = self._draw_skeleton(
-                img=ref_img,
+            reference_frame_skeleton = self._draw_skeleton(
+                frame=reference_frame,
                 all_keypoints=nn_output['reference_output'][batch_idx]['keypoints'],
             )
-            act_img_skeleton = self._draw_skeleton(
-                img=act_img,
+            actual_frame_skeleton = self._draw_skeleton(
+                frame=actual_frame,
                 all_keypoints=nn_output['actual_output'][batch_idx]['keypoints'],
             )
             # Draw metrics and merge 2 frames into one by width
-            combined_frames = self._combine(ref_img_skeleton, act_img_skeleton, metrics)
+            combined_frames = self._combine(
+                reference_frame=reference_frame_skeleton, 
+                actual_frame=actual_frame_skeleton,
+                metrics=metrics
+            )
             if video_writer: # video mode
                 video_writer.write(combined_frames)
             else: # image mode
