@@ -4,7 +4,6 @@ from .coach_modules.metrics import RMSE, ObjectKeypointSimilarity, CosineSimilar
 
 # Used metrics
 DEFAULT_METRICS_DICT = {
-    'OKS': ObjectKeypointSimilarity(),
     'RMSE': RMSE(),
     'WD': WeightedDistance(),
     'CosSim': CosineSimilarity()
@@ -12,6 +11,15 @@ DEFAULT_METRICS_DICT = {
 
 class VirtualCoach:
     def __init__(self, oks_threshold=0.7, metrics=DEFAULT_METRICS_DICT) -> None:
+        """A top-level class for comparing poses
+
+        Args:
+            `oks_threshold` (`float`, optional): The comparison threshold based on the OKS metric.  
+            If the result is greater than or equal to the threshold, then the comparison is considered successful,  
+            if less, then it is not considered successful. `0 < oks_threshold <= 1`. Defaults to `0.7`.
+            `metrics` (`dict`, optional): Additional metrics for comparing poses.  
+            In any case, at least one metric will always be used - Object Keypoint Similarity. Defaults to `DEFAULT_METRICS_DICT`.
+        """
         assert 0 < oks_threshold <= 1, 'OKS threshold should be > 0 and <= 1'
         self.oks_threshold = oks_threshold
         # Two base classes for preprocess images and videos
@@ -19,7 +27,8 @@ class VirtualCoach:
             'image': ImagePreprocessor(),
             'video': VideoPreprocessor()
         }
-        self.metrics = metrics
+        self.metrics = {'OKS': ObjectKeypointSimilarity()}
+        self.metrics.update(metrics)
         self.comparator = Comparator(oks_threshold=self.oks_threshold, metrics=self.metrics)
     
     def compare_poses(
@@ -32,6 +41,22 @@ class VirtualCoach:
         frame_skip=1, 
         batch_size=1
     ) -> dict:
+        """Compares 2 images or 2 videos, saves the result to a file and returns metrics as a dictionary.
+
+        Args:
+            `reference_path` (`str`): path to reference image or video
+            `actual_path` (`str`): path to actual image or video
+            `mode` (`str`): `'image'` or `'video'` depending on what exactly is being used as an input
+            `name` (`str`, optional): name for output video or image. Defaults to `result`
+            `fps` (`int`, optional): frames per second for `'video'` mode. Defaults to `30`
+            `frame_skip` (`int`, optional): affects the speed of the video, for example, 2 means speed 2x.  
+            Does not affect the `'image'` mode. Defaults to `1`
+            `batch_size` (`int`, optional): batch size for video mode, affects the averaging of metrics among frames.  
+            Does not affect the `'image'` mode. Defaults to `1`
+
+        Returns:
+            `dict`: calculated metrics
+        """
         assert mode in ['video', 'image'], 'Wrong mode'
         preprocessor = self.preprocessors[mode]
         extension = {

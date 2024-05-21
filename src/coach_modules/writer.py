@@ -30,12 +30,12 @@ class Writer:
         # Stack frames by width
         combined_frame = np.hstack((reference_frame[..., ::-1], actual_frame_resized[..., ::-1]))
         if metrics['OKS'] >= self.oks_threshold:
-            text_color = (0, 255, 0) # green
+            text_color = (0, 255, 0) # green 
             success_text = 'Good'
         else:
-            text_color = (0, 0, 255) # red
+            text_color = (0, 0, 255) # red (BGR format for OpenCV)
             success_text = 'Bad'
-        outline_color = (0, 0, 0)
+        outline_color = (0, 0, 0) # black
         # 'metric_name: metric_value ...'
         metrics_text = ' '.join([f'{k}={v:.2f}' for k, v in metrics.items()])
         metrics_position = (0, combined_frame.shape[0] - 10) # 10px up from left down corner
@@ -118,7 +118,6 @@ class Writer:
         video_writer: cv.VideoWriter,
         name: str
     ) -> None:
-        # Round metrics to 2nd decimal
         min_batch_size = min(len(reference_batch), len(actual_batch))
         for batch_idx in range(min_batch_size):
             # Take frames from batches

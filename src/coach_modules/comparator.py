@@ -7,6 +7,14 @@ from .metrics_aggregator import MetricsAggregator
 
 class Comparator:
     def __init__(self, oks_threshold: float, metrics: dict) -> None:
+        """A low-level class for comparing poses
+
+        Args:
+            `oks_threshold` (`float`): The comparison threshold based on the OKS metric.  
+            If the result is greater than or equal to the threshold, then the comparison is considered successful,  
+            if less, then it is not considered successful. `0 < oks_threshold <= 1`.
+            `metrics` (`dict`): Additional metrics for comparing poses.
+        """
         self.keypoint_detector = KeypointDetector()
         self.metrics_aggregator = MetricsAggregator(metrics)
         self.writer = Writer(oks_threshold)
@@ -25,6 +33,18 @@ class Comparator:
         name: str,
         fps: int
     ) -> dict:
+        """Compares data in two dataloaders, accumulates average metrics, and saves the results to a file
+
+        Args:
+            `reference_dl` (`DataLoader`): reference dataloader
+            `actual_dl` (`DataLoader`): actual dataloader
+            `mode` (`str`): `'image'` or `'video'`
+            `name` (`str`): name of output to save
+            `fps` (`int`): frames per second for `'video'` mode
+
+        Returns:
+            `dict`: averaged metrics over all batches
+        """
         # Check how many iterations there will be in the zip operator. 
         # If there are 2 videos of different duration, 
         # then the number of iterations will be counted according to the minimum duration
