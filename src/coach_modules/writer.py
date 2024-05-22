@@ -4,7 +4,12 @@ import cv2 as cv
 from torchvision.utils import draw_keypoints
 
 class Writer:
-    def __init__(self, oks_threshold) -> None:
+    def __init__(self, oks_threshold: float) -> None:
+        """Class for saving the result of comparing poses as a file (video or image)
+
+        Args:
+            `oks_threshold` (`float`): the comparison threshold based on the OKS metric
+        """
         self.KEYPOINTS = [
             'nose','left_eye','right_eye',
             'left_ear','right_ear','left_shoulder',
@@ -15,12 +20,81 @@ class Writer:
         ]
         self.oks_threshold = oks_threshold
 
+    def _get_joint_connections(self, keypoints: list) -> list:
+        """Auxiliary function for getting connections between keypoints
+
+        Args:
+            `keypoints` (`list`): list of key points
+
+        Returns:
+            `limbs`(`list`): list of connections between points by indexes
+        """
+        limbs = [
+            [keypoints.index("right_eye"), keypoints.index("nose")],
+            [keypoints.index("right_eye"), keypoints.index("right_ear")],
+            [keypoints.index("left_eye"), keypoints.index("nose")],
+            [keypoints.index("left_eye"), keypoints.index("left_ear")],
+            [keypoints.index("right_shoulder"), keypoints.index("right_elbow")],
+            [keypoints.index("right_elbow"), keypoints.index("right_wrist")],
+            [keypoints.index("left_shoulder"), keypoints.index("left_elbow")],
+            [keypoints.index("left_elbow"), keypoints.index("left_wrist")],
+            [keypoints.index("right_hip"), keypoints.index("right_knee")],
+            [keypoints.index("right_knee"), keypoints.index("right_ankle")],
+            [keypoints.index("left_hip"), keypoints.index("left_knee")],
+            [keypoints.index("left_knee"), keypoints.index("left_ankle")],
+            [keypoints.index("right_shoulder"), keypoints.index("left_shoulder")],
+            [keypoints.index("right_hip"), keypoints.index("left_hip")],
+            [keypoints.index("right_shoulder"), keypoints.index("right_hip")],
+            [keypoints.index("left_shoulder"), keypoints.index("left_hip")],
+        ]
+        return limbs
+        
+    def _draw_skeleton(
+        self, 
+        frame: torch.Tensor,
+        all_keypoints: torch.Tensor
+    ) -> np.ndarray:
+        """Draws a skeleton on a frame
+
+        Args:
+            `frame` (`torch.Tensor`): single image tensor with shape `[3, H, W]` and `float` type 
+            `all_keypoints` (`torch.Tensor`): keypoints tensor with shape `[B, 17, 3]`
+
+        Returns:
+            `result` (`np.ndarray`): frame with a drawn skeleton with shape `[H, W, 3]` and `uint8` type 
+        """
+        joint_connections = self._get_joint_connections(self.KEYPOINTS)
+        keypoints = all_keypoints[..., :-1][0][None, ...] # [1, 17, 2]
+        visibility = all_keypoints[..., -1:][0][None, ...] # [1, 17, 1]
+        result = draw_keypoints(
+            frame,
+            keypoints=keypoints,
+            visibility=visibility,
+            connectivity=joint_connections,
+            radius=5,
+            width=3,
+            colors=(0, 255, 255)
+        )
+        # [3, H, W]: float -> [H, W, 3]: uint8
+        result = (result.permute(1, 2, 0).cpu() * 255).numpy().astype(np.uint8)    
+        return result
+
     def _combine(
         self, 
         reference_frame: np.ndarray,
         actual_frame: np.ndarray,
         metrics: dict
     ) -> np.ndarray:
+        """Combines the reference and actual frames in width into one, and also adds a display of the values of the metrics used
+
+        Args:
+            `reference_frame` (`np.ndarray`): reference frame with shape `[H, W, 3]` and `uint8` type 
+            `actual_frame` (`np.ndarray`): actual frame with shape `[H, W, 3]` and `uint8` type 
+            `metrics` (`dict`): dictionary of metrics per batch
+
+        Returns:
+            `combined_frame` (`np.ndarray`): combined frame with shape `[H, W, 3]` and `uint8` type 
+        """
         # Resize actual frame to the reference frame size
         actual_frame_resized = cv.resize(
             actual_frame,
@@ -66,48 +140,6 @@ class Writer:
                 thickness=2
             )
         return combined_frame
-        
-    def _get_joint_connections(self, keypoints: dict) -> list:
-        limbs = [
-            [keypoints.index("right_eye"), keypoints.index("nose")],
-            [keypoints.index("right_eye"), keypoints.index("right_ear")],
-            [keypoints.index("left_eye"), keypoints.index("nose")],
-            [keypoints.index("left_eye"), keypoints.index("left_ear")],
-            [keypoints.index("right_shoulder"), keypoints.index("right_elbow")],
-            [keypoints.index("right_elbow"), keypoints.index("right_wrist")],
-            [keypoints.index("left_shoulder"), keypoints.index("left_elbow")],
-            [keypoints.index("left_elbow"), keypoints.index("left_wrist")],
-            [keypoints.index("right_hip"), keypoints.index("right_knee")],
-            [keypoints.index("right_knee"), keypoints.index("right_ankle")],
-            [keypoints.index("left_hip"), keypoints.index("left_knee")],
-            [keypoints.index("left_knee"), keypoints.index("left_ankle")],
-            [keypoints.index("right_shoulder"), keypoints.index("left_shoulder")],
-            [keypoints.index("right_hip"), keypoints.index("left_hip")],
-            [keypoints.index("right_shoulder"), keypoints.index("right_hip")],
-            [keypoints.index("left_shoulder"), keypoints.index("left_hip")],
-        ]
-        return limbs
-        
-    def _draw_skeleton(
-        self, 
-        frame: torch.Tensor,
-        all_keypoints: torch.Tensor
-    ) -> np.ndarray:
-        
-        joint_connections = self._get_joint_connections(self.KEYPOINTS)
-        keypoints = all_keypoints[..., :-1][0][None, ...] # [1, 17, 2]
-        visibility = all_keypoints[..., -1:][0][None, ...] # [1, 17, 1]
-        result = draw_keypoints(
-            frame,
-            keypoints=keypoints,
-            visibility=visibility,
-            connectivity=joint_connections,
-            radius=5,
-            width=3,
-            colors=(0, 255, 255)
-        )
-        # [3, H, W]: float -> [H, W, 3]: uint8
-        return (result.permute(1, 2, 0).cpu() * 255).numpy().astype(np.uint8)    
     
     def write(
         self, 
@@ -118,6 +150,16 @@ class Writer:
         video_writer: cv.VideoWriter,
         name: str
     ) -> None:
+        """Writes the result of comparing two poses to a file (video or image)
+
+        Args:
+            `reference_batch` (`torch.Tensor`): single batch from reference dataloader
+            `actual_batch` (`torch.Tensor`): single batch from actual dataloader
+            `nn_output` (`dict`): output from keypoint model (forward pass) for used reference and actual batch
+            `metrics` (`dict`): dictionary of calculated metrics for used reference and actual batch
+            `video_writer` (`cv.VideoWriter` or `None`): `None` -> result output file will be image, otherwise video
+            `name` (`str`): name of output file
+        """
         min_batch_size = min(len(reference_batch), len(actual_batch))
         for batch_idx in range(min_batch_size):
             # Take frames from batches
