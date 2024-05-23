@@ -15,7 +15,7 @@ This application helps to compare the similarity of poses of two different peopl
 ## Usage example
 * **CMD/Bash**
 
-  Call main script via `$ python main.py`, fill neccesary field and wait for output
+  Call main script via terminal `$ python main.py`, fill neccesary field and wait for output
 * **As python class**
 
   Create instance of `VirtualCoach` from `./src/coach.py`, call function `.compare_poses`  
