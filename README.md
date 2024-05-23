@@ -2,7 +2,7 @@
 This application helps to compare the similarity of poses of two different people in photos or videos
 
 <details>
-  <summary><b>Example</b></summary>
+  <summary><b><u>Example</b> (clickable spoiler)</u></summary>
   
   * Image  
     ![](examples/images/img_comparison.png)
