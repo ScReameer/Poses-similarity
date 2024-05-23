@@ -8,8 +8,7 @@ class MetricsAggregator:
         self.metrics_dict = metrics_dict
         
     def set_cumulative_zeros(self) -> None:
-        """
-            Initializes cumulative variables of each metric for further averaging
+        """Initializes cumulative variables of each metric for further averaging
         """
         self.cumulative_metrics = {
             metric_name: .0 

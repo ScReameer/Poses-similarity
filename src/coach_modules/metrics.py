@@ -4,8 +4,7 @@ from torch.nn.functional import cosine_similarity, mse_loss, l1_loss
 # Abstract class
 class Metric:
     def __init__(self) -> None:
-        """
-            Abstract metrics class
+        """Abstract metrics class
         """
         pass
     
@@ -154,8 +153,7 @@ class ObjectKeypointSimilarity(Metric):
 
 class CosineSimilarity(Metric):
     def __init__(self) -> None:
-        """
-            Cosine similarity class
+        """Cosine similarity class
         """
         super().__init__()
 
@@ -174,8 +172,7 @@ class CosineSimilarity(Metric):
         
 class RMSE(Metric):
     def __init__(self) -> None:
-        """
-            Root mean squared error class
+        """Root mean squared error class
         """
         super().__init__()
 
@@ -204,8 +201,7 @@ class MAE(Metric):
 # Weighted distance class
 class WeightedDistance(Metric):
     def __init__(self) -> None:
-        """
-            Weighted distance class
+        """Weighted distance class
         """
         super().__init__()
      

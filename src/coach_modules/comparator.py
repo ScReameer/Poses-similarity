@@ -19,7 +19,16 @@ class Comparator:
         self.metrics_aggregator = MetricsAggregator(metrics)
         self.writer = Writer(oks_threshold)
         
-    def _predict(self, reference_batch: torch.Tensor, actual_batch: torch.Tensor) -> tuple:
+    def _predict(self, reference_batch: torch.Tensor, actual_batch: torch.Tensor) -> dict:
+        """Make a prediction for reference batch and actual batch using `self.keypoint_detector`
+
+        Args:
+            `reference_batch` (`torch.Tensor`): single batch from reference dataloader
+            `actual_batch` (`torch.Tensor`): single batch from actual dataloader
+
+        Returns:
+            `dict`: dictionary with 2 keys `reference_output` and `actual_output`, values is result of keypoint network
+        """
         return {
             'reference_output': self.keypoint_detector(reference_batch),
             'actual_output': self.keypoint_detector(actual_batch)

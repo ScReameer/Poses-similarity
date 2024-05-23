@@ -6,7 +6,7 @@ from .coach_modules.metrics import RMSE, ObjectKeypointSimilarity, CosineSimilar
 DEFAULT_METRICS_DICT = {
     'RMSE': RMSE(),
     'WD': WeightedDistance(),
-    'CosSim': CosineSimilarity()
+    # 'CosSim': CosineSimilarity()
 }
 
 class VirtualCoach:

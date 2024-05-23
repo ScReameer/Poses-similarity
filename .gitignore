@@ -4,3 +4,6 @@
 __*
 *.avi
 *.drawio
+!img_comparison.png
+!video_gif_comparison.gif
+!arch.png

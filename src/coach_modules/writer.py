@@ -105,10 +105,10 @@ class Writer:
         combined_frame = np.hstack((reference_frame[..., ::-1], actual_frame_resized[..., ::-1]))
         if metrics['OKS'] >= self.oks_threshold:
             text_color = (0, 255, 0) # green 
-            success_text = 'Good'
+            success_text = 'Good matching'
         else:
             text_color = (0, 0, 255) # red (BGR format for OpenCV)
-            success_text = 'Bad'
+            success_text = 'Bad matching'
         outline_color = (0, 0, 0) # black
         # 'metric_name: metric_value ...'
         metrics_text = ' '.join([f'{k}={v:.2f}' for k, v in metrics.items()])

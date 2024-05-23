@@ -1,11 +1,18 @@
 from src.coach import VirtualCoach
-coach = VirtualCoach()
+
+COACH = VirtualCoach()
+
 def main():
     mode = input('Select mode: video or image: ')
     reference_path = input('Reference path: ')
     actual_path = input('Actual path: ')
     name = input('Output name: ')
-    result = coach.compare_poses(reference_path, actual_path, mode, name)
+    result = COACH.compare_poses(
+        reference_path=reference_path, 
+        actual_path=actual_path, 
+        mode=mode, 
+        name=name
+    )
     print('Processing...')
     print(result)
     
