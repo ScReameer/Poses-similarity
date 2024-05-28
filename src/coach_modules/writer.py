@@ -160,7 +160,7 @@ class Writer:
             `video_writer` (`cv.VideoWriter` or `None`): `None` -> result output file will be image, otherwise video
             `name` (`str`): name of output file
         """
-        min_batch_size = min(len(reference_batch), len(actual_batch))
+        min_batch_size = min(map(len, [reference_batch, actual_batch]))
         for batch_idx in range(min_batch_size):
             # Take frames from batches
             reference_frame = reference_batch[batch_idx].cpu()

@@ -1,5 +1,6 @@
 import torch
 from torch.nn.functional import cosine_similarity, mse_loss, l1_loss
+from scipy.spatial.distance import cosine
 
 # Abstract class
 class Metric:
@@ -113,8 +114,7 @@ class Metric:
 
 class ObjectKeypointSimilarity(Metric):
     def __init__(self) -> None:
-        """
-            Object keypoints similarity class
+        """Object keypoints similarity class
         """
         super().__init__()
         # https://github.com/ultralytics/ultralytics/blob/main/ultralytics/utils/metrics.py#L14
@@ -191,9 +191,19 @@ class RMSE(Metric):
     
 class MAE(Metric):
     def __init__(self) -> None:
+        """Mean absolute error class
+        """
         super().__init__()
 
     def _compute(self, prepared_poses) -> torch.Tensor:
+        """Computes MAE between 2 poses
+
+        Args:
+            `prepared_poses` (`dict`): output from `self._prepare_output` function
+
+        Returns:
+            `torch.Tensor`: averaged MAE across batch size
+        """
         reference_pose, actual_pose = self._drop_visibility(prepared_poses['reference'], prepared_poses['actual'])
         mae = l1_loss(reference_pose, actual_pose)
         return mae
