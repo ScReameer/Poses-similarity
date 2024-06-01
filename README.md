@@ -1,4 +1,4 @@
-# Pose similarity comparison using deep learning
+# <b>Pose similarity comparison using deep learning</b>
 This application helps to compare the similarity of poses of two different people in photos or videos
 
 <details>
@@ -12,7 +12,7 @@ This application helps to compare the similarity of poses of two different peopl
   
 </details>
 
-## Metrics
+## <b>Metrics</b>
 ### <i>OKS (Object keypoint similarity)</i>
 
 $$OKS = \frac{\sum_{i \in [0, N-1]}\exp(\frac{-d_i^2}{2s^2k_i^2}) \delta(v_i > 0)}{\sum{i \in [0, N-1]}\delta(v_i > 0)} \text{, where}$$
@@ -38,7 +38,7 @@ $$WD = \sum_{i=1}^N{\frac{\frac{1}{\sum{w_{ref}}} \times \sum{w_{ref}||y - \hat{
 * $y$ - reference pose  
 * $\hat{y}$ - actual pose  
 
-## Usage
+## <b>Usage</b>
 * **CMD/Bash**
 
   Call main script via terminal `$ python main.py`, fill neccesary field and wait for output
@@ -47,6 +47,6 @@ $$WD = \sum_{i=1}^N{\frac{\frac{1}{\sum{w_{ref}}} \times \sum{w_{ref}||y - \hat{
   Create instance of `VirtualCoach` from `./src/coach.py`, call function `.compare_poses`  
   [<b>Notebook with example</b>](./examples/usage_example.ipynb)
 
-## Architecture
+## <b>Architecture</b>
 Simple visualization of pipeline:  
 ![](examples/images/arch.png)
