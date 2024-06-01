@@ -12,6 +12,15 @@ This application helps to compare the similarity of poses of two different peopl
   
 </details>
 
+## <b>Usage</b>
+* **CMD/Bash**
+
+  Call main script via terminal `$ python main.py`, fill neccesary field and wait for output
+* **As python class**
+
+  Create instance of `VirtualCoach` from `./src/coach.py`, call function `.compare_poses`  
+  [<b>Notebook with example</b>](./examples/usage_example.ipynb)
+
 ## <b>Metrics</b>
 ### <i>OKS (Object keypoint similarity)</i>
 
@@ -37,15 +46,6 @@ $$WD = \sum_{i=1}^N{\frac{\frac{1}{\sum{w_{ref}}} \times \sum{w_{ref}||y - \hat{
 * $w_{ref}$ - "weight" of reference keypoints (logits from model output)  
 * $y$ - reference pose  
 * $\hat{y}$ - actual pose  
-
-## <b>Usage</b>
-* **CMD/Bash**
-
-  Call main script via terminal `$ python main.py`, fill neccesary field and wait for output
-* **As python class**
-
-  Create instance of `VirtualCoach` from `./src/coach.py`, call function `.compare_poses`  
-  [<b>Notebook with example</b>](./examples/usage_example.ipynb)
 
 ## <b>Architecture</b>
 Simple visualization of pipeline:  
