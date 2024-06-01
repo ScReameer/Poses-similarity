@@ -41,7 +41,7 @@ $$RMSE = \sqrt{\sum_{i=1}^N \frac{(\hat{y}_i - y_i)^2}{N}} \text{, where}$$
 
 ### <i>WD (Weighted distance)</i>
 
-$$WD = \sum_{i=1}^N{\frac{\frac{1}{\sum{w_{ref}}} \times \sum{w_{ref}||y - \hat{y}||}}{N}} \text{, where}$$
+$$WD = \sum_{i=1}^N{\frac{\frac{1}{\sum{w_{ref}^i}} \times \sum{w_{ref}^i||y_i - \hat{y}_i||}}{N}} \text{, where}$$
 
 * $w_{ref}$ - "weight" of reference keypoints (logits from model output)  
 * $y$ - reference pose  
