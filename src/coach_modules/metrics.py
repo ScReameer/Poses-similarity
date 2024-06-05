@@ -5,8 +5,7 @@ from scipy.spatial.distance import cosine
 # Abstract class
 class Metric:
     def __init__(self) -> None:
-        """Abstract metrics class
-        """
+        """Abstract metrics class"""
         pass
     
     def __call__(self, **nn_output: dict) -> torch.Tensor | None:
@@ -114,21 +113,17 @@ class Metric:
 
 class ObjectKeypointSimilarity(Metric):
     def __init__(self) -> None:
-        """Object keypoints similarity class
-        """
+        """Object keypoints similarity class"""
         super().__init__()
         # https://github.com/ultralytics/ultralytics/blob/main/ultralytics/utils/metrics.py#L14
-        self.OKS_SIGMA = (
-            torch.tensor(
-                [
-                    0.26, 0.25, 0.25, 0.35,
-                    0.35, 0.79, 0.79, 0.72,
-                    0.72, 0.62, 0.62, 1.07,
-                    1.07, 0.87, 0.87, 0.89,
-                    0.89
-                ]
-            ) / 10.0
-        )
+        self.OKS_SIGMA = torch.tensor([
+            0.26, 0.25, 0.25, 0.35,
+            0.35, 0.79, 0.79, 0.72,
+            0.72, 0.62, 0.62, 1.07,
+            1.07, 0.87, 0.87, 0.89,
+            0.89
+        ]) / 10.0
+        
     # https://github.com/ultralytics/ultralytics/blob/main/ultralytics/utils/metrics.py#L153
     def _compute(self, prepared_poses: dict, eps=1e-7) -> torch.Tensor:
         """Computes OKS between 2 poses
@@ -153,8 +148,7 @@ class ObjectKeypointSimilarity(Metric):
 
 class CosineSimilarity(Metric):
     def __init__(self) -> None:
-        """Cosine similarity class
-        """
+        """Cosine similarity class"""
         super().__init__()
 
     def _compute(self, prepared_poses: dict) -> torch.Tensor:
@@ -172,8 +166,7 @@ class CosineSimilarity(Metric):
         
 class RMSE(Metric):
     def __init__(self) -> None:
-        """Root mean squared error class
-        """
+        """Root mean squared error class"""
         super().__init__()
 
     def _compute(self, prepared_poses) -> torch.Tensor:
@@ -191,8 +184,7 @@ class RMSE(Metric):
     
 class MAE(Metric):
     def __init__(self) -> None:
-        """Mean absolute error class
-        """
+        """Mean absolute error class"""
         super().__init__()
 
     def _compute(self, prepared_poses) -> torch.Tensor:
@@ -211,8 +203,7 @@ class MAE(Metric):
 # Weighted distance class
 class WeightedDistance(Metric):
     def __init__(self) -> None:
-        """Weighted distance class
-        """
+        """Weighted distance class"""
         super().__init__()
      
     def _compute(self, prepared_poses):

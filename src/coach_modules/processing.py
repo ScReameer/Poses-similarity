@@ -8,8 +8,7 @@ DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 # Abstract class
 class Processor:
     def __init__(self) -> None:
-        """Abstract processing class
-        """
+        """Abstract processing class"""
         self.transforms = T.Compose([
             T.ToTensor()
         ])
@@ -23,15 +22,13 @@ class Processor:
         return self._process(*args, **kwds)
     
     def _process(self, *args, **kwds):
-        """Abstract processing function
-        """
+        """Abstract processing function"""
         pass
     
 # One image preprocessor
 class ImagePreprocessor(Processor):
     def __init__(self) -> None:
-        """Image preprocessor class, converts image path into `DataLoader`
-        """
+        """Image preprocessor class, converts image path into `DataLoader`"""
         super().__init__()
     
     def _process(self, img_path: str, *args, **kwds) -> DataLoader:
@@ -52,8 +49,7 @@ class ImagePreprocessor(Processor):
 # Video preprocessor
 class VideoPreprocessor(Processor):
     def __init__(self) -> None:
-        """Video preprocessor class, converts video path into `DataLoader`
-        """
+        """Video preprocessor class, converts video path into `DataLoader`"""
         super().__init__()
 
     def _process(self, video_path: str, frame_skip: int, batch_size: int) -> DataLoader:
