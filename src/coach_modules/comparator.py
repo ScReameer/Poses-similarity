@@ -61,7 +61,6 @@ class Comparator:
         self.metrics_aggregator.set_cumulative_zeros() # For averaging metrics
         if mode == 'video':
             height, width = next(iter(reference_dl)).shape[2:]
-            # width = next(iter(reference_dl)).shape[-1]
             output_width = width * 2
             fourcc = cv.VideoWriter_fourcc(*'XVID')
             video_writer = cv.VideoWriter(

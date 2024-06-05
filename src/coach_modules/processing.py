@@ -5,7 +5,6 @@ from torch.utils.data import Dataset, DataLoader
 
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-# Abstract class
 class Processor:
     def __init__(self) -> None:
         """Abstract processing class"""
@@ -25,7 +24,6 @@ class Processor:
         """Abstract processing function"""
         pass
     
-# One image preprocessor
 class ImagePreprocessor(Processor):
     def __init__(self) -> None:
         """Image preprocessor class, converts image path into `DataLoader`"""
@@ -46,7 +44,6 @@ class ImagePreprocessor(Processor):
         dataloader = DataLoader(single_image, batch_size=1, shuffle=False)
         return dataloader
     
-# Video preprocessor
 class VideoPreprocessor(Processor):
     def __init__(self) -> None:
         """Video preprocessor class, converts video path into `DataLoader`"""

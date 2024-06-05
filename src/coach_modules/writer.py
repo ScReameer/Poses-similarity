@@ -64,8 +64,9 @@ class Writer:
             `result` (`np.ndarray`): frame with a drawn skeleton with shape `[H, W, 3]` and `uint8` type 
         """
         joint_connections = self._get_joint_connections(self.KEYPOINTS)
-        keypoints = all_keypoints[..., :-1][0][None, ...] # [1, 17, 2]
-        visibility = all_keypoints[..., -1:][0][None, ...] # [1, 17, 1]
+        # Take the most likely 0-th keypoint from detection, separate tensor into keypoints and visibility
+        keypoints = all_keypoints[0, :, :-1].unsqueeze(0) # [1, 17, 2]
+        visibility = all_keypoints[0, :, -1:].unsqueeze(0) # [1, 17, 1]
         result = draw_keypoints(
             frame,
             keypoints=keypoints,
@@ -73,7 +74,7 @@ class Writer:
             connectivity=joint_connections,
             radius=5,
             width=3,
-            colors=(0, 255, 255)
+            colors=(0, 255, 255) # cyan color for keypoints
         )
         # [3, H, W]: float -> [H, W, 3]: uint8
         result = (result.permute(1, 2, 0).cpu() * 255).numpy().astype(np.uint8)    
@@ -98,7 +99,7 @@ class Writer:
         # Resize actual frame to the reference frame size
         actual_frame_resized = cv.resize(
             actual_frame,
-            dsize=reference_frame.shape[:-1][::-1],
+            dsize=reference_frame.shape[:-1][::-1], # [H, W, C] -> [W, H]
             interpolation=cv.INTER_LINEAR
         )
         # Stack frames by width
@@ -111,7 +112,7 @@ class Writer:
             success_text = 'Bad matching'
         outline_color = (0, 0, 0) # black
         # 'metric_name: metric_value ...'
-        metrics_text = ' '.join([f'{k}={v:.2f}' for k, v in metrics.items()])
+        metrics_text = ' '.join([f'{metric_name}={metric_value:.2f}' for metric_name, metric_value in metrics.items()])
         metrics_position = (0, combined_frame.shape[0] - 10) # 10px up from left down corner
         success_position = (0, combined_frame.shape[0] - 50) # 50px up from left down corner
         # Add colored text with outline
@@ -119,24 +120,23 @@ class Writer:
             [success_text, metrics_text], 
             [success_position, metrics_position]
         ):
-            # Add text outline
-            cv.putText(
-                combined_frame,
+            text_config = dict(
+                img=combined_frame,
                 text=text_to_add,
                 org=position,
-                color=outline_color,
                 fontFace=cv.FONT_HERSHEY_COMPLEX,
-                fontScale=1,
+                fontScale=1
+            )
+            # Add text outline
+            cv.putText(
+                **text_config,
+                color=outline_color,
                 thickness=8
             )
             # Add colored text
             cv.putText(
-                combined_frame,
-                text=text_to_add,
-                org=position,
+                **text_config,
                 color=text_color,
-                fontFace=cv.FONT_HERSHEY_COMPLEX,
-                fontScale=1,
                 thickness=2
             )
         return combined_frame
