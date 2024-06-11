@@ -1,8 +1,6 @@
 import torch
-from torch.nn.functional import cosine_similarity, mse_loss, l1_loss
-from scipy.spatial.distance import cosine
+from torch.nn.functional import mse_loss, l1_loss, cosine_similarity
 
-# Abstract class
 class Metric:
     def __init__(self) -> None:
         """Abstract metrics class"""
@@ -54,7 +52,7 @@ class Metric:
         # AX = B, where A - actual pose, X - affine matrix, B - reference pose
         affine_matrix = torch.linalg.lstsq(actual_poses, reference_poses).solution
         transformed_actual_poses = actual_poses @ affine_matrix
-        # Return visibility vector
+        # Return visibility tensor
         transformed_actual_poses = torch.cat([transformed_actual_poses, actual_visibility], dim=-1)
         return transformed_actual_poses
     
@@ -200,7 +198,6 @@ class MAE(Metric):
         mae = l1_loss(reference_pose, actual_pose)
         return mae
         
-# Weighted distance class
 class WeightedDistance(Metric):
     def __init__(self) -> None:
         """Weighted distance class"""

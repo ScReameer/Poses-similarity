@@ -1,26 +1,24 @@
 from .coach_modules.processing import ImagePreprocessor, VideoPreprocessor
 from .coach_modules.comparator import Comparator
-from .coach_modules.metrics import RMSE, ObjectKeypointSimilarity, CosineSimilarity, WeightedDistance
-
-# Used metrics
-DEFAULT_METRICS_DICT = {
-    'RMSE': RMSE(),
-    'WD': WeightedDistance(),
-    # 'CosSim': CosineSimilarity()
-}
+from .coach_modules.metrics import ObjectKeypointSimilarity, Metric
 
 class VirtualCoach:
-    def __init__(self, oks_threshold=0.7, metrics=DEFAULT_METRICS_DICT) -> None:
+    def __init__(self, oks_threshold=0.7, aux_metrics=None) -> None:
         """A top-level class for comparing poses
 
         Args:
-            `oks_threshold` (`float`, optional): The comparison threshold based on the OKS metric.  
+            `oks_threshold` (`float`, optional): the comparison threshold based on the OKS metric.  
             If the result is greater than or equal to the threshold, then the comparison is considered successful,  
             if less, then it is not considered successful. `0 < oks_threshold <= 1`. Defaults to `0.7`.
-            `metrics` (`dict`, optional): Additional metrics for comparing poses.  
-            In any case, at least one metric will always be used - Object Keypoint Similarity. Defaults to `DEFAULT_METRICS_DICT`.
+            `aux_metrics` (`dict`, optional): additional metrics for comparing poses.  
+            In any case, at least one metric will always be used - Object Keypoint Similarity. Defaults to `None`.
         """
+        # Arguments validation
         assert 0 < oks_threshold <= 1, 'OKS threshold should be > 0 and <= 1'
+        if aux_metrics is not None:
+            assert type(aux_metrics) is dict, 'Aux metrics should be dictionary of metrics {"name": metric}'
+            for metric in aux_metrics.values():
+                assert issubclass(metric.__class__, Metric), 'Aux metrics should be a subclass of Metric from src.coach_modules.metrics'
         self.oks_threshold = oks_threshold
         # Two base classes for preprocess images and videos
         self.preprocessors = {
@@ -28,7 +26,8 @@ class VirtualCoach:
             'video': VideoPreprocessor()
         }
         self.metrics = {'OKS': ObjectKeypointSimilarity()}
-        self.metrics.update(metrics)
+        if aux_metrics:
+            self.metrics.update(aux_metrics)
         self.comparator = Comparator(oks_threshold=self.oks_threshold, metrics=self.metrics)
     
     def compare_poses(
@@ -71,7 +70,7 @@ class VirtualCoach:
                 reference_dl = preprocessor(reference_path, frame_skip, batch_size)
                 actual_dl = preprocessor(actual_path, frame_skip, batch_size)
             except:
-                print('Wrong path')
+                print('Wrong path or file extension')
             else:
                 metrics = self.comparator.compare(
                     reference_dl=reference_dl,

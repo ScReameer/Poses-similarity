@@ -3,7 +3,7 @@ class MetricsAggregator:
         """Auxiliary class for working with metrics
 
         Args:
-            metrics_dict (`dict`): dictionary with metrics as objects
+            `metrics_dict` (`dict`): dictionary with metrics as objects
         """
         self.metrics_dict = metrics_dict
         
@@ -32,7 +32,7 @@ class MetricsAggregator:
         """Accumulates the output from `get_metrics_per_batch` function for further averaging
 
         Args:
-            metrics_per_batch (`dict`): output from `get_metrics_per_batch`
+            `metrics_per_batch` (`dict`): output from `get_metrics_per_batch`
         """
         for metric_name, value in metrics_per_batch.items():
             self.cumulative_metrics[metric_name] += value
