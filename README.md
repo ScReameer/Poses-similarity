@@ -5,10 +5,10 @@ This application helps to compare the similarity of poses of two different peopl
   <summary><b>Example</b> (clickable spoiler)</summary>
   
   * Image  
-    ![](examples/images/img_comparison.png)
+    ![](examples/img_comparison.png)
   
   * Video  
-    ![](examples/images/video_gif_comparison.gif)
+    ![](examples/video_gif_comparison.gif)
   
 </details>
 
@@ -19,10 +19,10 @@ This application helps to compare the similarity of poses of two different peopl
 * **As python class**
 
   Create instance of `VirtualCoach` from `./src/coach.py`, call function `.compare_poses`  
-  [<b>Notebook with example</b>](./examples/usage_example.ipynb)
+  [<b>Notebook with example</b>](usage_example.ipynb)
 
 ## <b>Metrics</b>
-### <i>OKS (Object keypoint similarity)</i>
+### <i>OKS (Object keypoint similarity)</i> (main metric)
 
 $$OKS = \frac{\sum_{i \in [0, N-1]}\exp(\frac{-d_i^2}{2s^2k_i^2}) \delta(v_i > 0)}{\sum{i \in [0, N-1]}\delta(v_i > 0)} \text{, where}$$
 
@@ -47,6 +47,16 @@ $$WD = \sum_{i=1}^N{\frac{\frac{1}{\sum{w_{ref}^i}} \times \sum{w_{ref}^i||y_i -
 * $y$ - reference pose  
 * $\hat{y}$ - actual pose  
 
+### <i>CosSim (Cosine similarity)</i>
+
+$$CosSim = \frac{y \cdot \hat{y}}{||y|| \cdot ||\hat{y}||} = \frac{\sum_{i=1}^N{y_i \hat{y}_i}}{\sqrt{\sum_{i=1}^N{y_i^2}} \sqrt{\sum_{i=1}^N{\hat{y}_i^2}}} \text{, where}$$
+
+* $y$ - reference pose
+* $\hat{y}$ - actual pose
+
 ## <b>Architecture</b>
 Simple visualization of pipeline:  
 ![](examples/images/arch.png)
+
+## References
+[<b>Object Keypoint Similarity in Keypoint Detection</b>](https://learnopencv.com/object-keypoint-similarity/)
