@@ -49,14 +49,14 @@ $$WD = \sum_{i=1}^N{\frac{\frac{1}{\sum{w_{ref}^i}} \times \sum{w_{ref}^i||y_i -
 
 ### <i>CosSim (Cosine similarity)</i>
 
-$$CosSim = \frac{y \cdot \hat{y}}{\parallel y \parallel \cdot\parallel \hat{y} \parallel} = \frac{\sum_{i=1}^N{y_i \hat{y}_i}}{\sqrt{\sum_{i=1}^N{y_i^2}} \sqrt{\sum_{i=1}^N{\hat{y}_i^2}}} \text{, where}$$
+$$CosSim = \frac{y \cdot \hat{y}}{\parallel y \parallel \cdot\parallel \hat{y} \parallel}\text{, where}$$
 
 * $y$ - reference pose
 * $\hat{y}$ - actual pose
 
 ## <b>Architecture</b>
 Simple visualization of pipeline:  
-![](examples/images/arch.png)
+![](examples/arch.png)
 
 ## References
 [<b>Object Keypoint Similarity in Keypoint Detection</b>](https://learnopencv.com/object-keypoint-similarity/)
