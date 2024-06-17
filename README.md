@@ -49,7 +49,7 @@ $$WD = \sum_{i=1}^N{\frac{\frac{1}{\sum{w_{ref}^i}} \times \sum{w_{ref}^i||y_i -
 
 ### <i>CosSim (Cosine similarity)</i>
 
-$$CosSim = \frac{y \cdot \hat{y}}{||y|| \cdot ||\hat{y}||} = \frac{\sum_{i=1}^N{y_i \hat{y}_i}}{\sqrt{\sum_{i=1}^N{y_i^2}} \sqrt{\sum_{i=1}^N{\hat{y}_i^2}}} \text{, where}$$
+$$CosSim = \frac{y \cdot \hat{y}}{\parallel y \parallel \cdot\parallel \hat{y} \parallel} = \frac{\sum_{i=1}^N{y_i \hat{y}_i}}{\sqrt{\sum_{i=1}^N{y_i^2}} \sqrt{\sum_{i=1}^N{\hat{y}_i^2}}} \text{, where}$$
 
 * $y$ - reference pose
 * $\hat{y}$ - actual pose
