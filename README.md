@@ -12,14 +12,20 @@ This application helps to compare the similarity of poses of two different peopl
   
 </details>
 
-## <b>Usage</b>
-* **CMD/Bash**
-
-  Call main script via terminal `$ python main.py`, fill neccesary field and wait for output
-* **As python class**
+## <b>How to use</b>
+<i><b>Python 3.11.x</b></i> with installed [<b>requirements</b>](requirements.txt): `pip install -r requirements.txt
+`
+* **As python class (preferred method)** 
 
   Create instance of `VirtualCoach` from `./src/coach.py`, call function `.compare_poses`  
   [<b>Notebook with example</b>](usage_example.ipynb)
+
+* **CMD/Bash**
+
+  Call main script via terminal `$ python main.py`, fill neccesary field and wait for output
+
+## <b>Architecture</b>
+![](examples/arch.png)
 
 ## <b>Metrics</b>
 ### <i>OKS (Object keypoint similarity)</i> (main metric)
@@ -53,10 +59,6 @@ $$CosSim = \frac{y \cdot \hat{y}}{\parallel y \parallel \cdot\parallel \hat{y} \
 
 * $y$ - reference pose
 * $\hat{y}$ - actual pose
-
-## <b>Architecture</b>
-Simple visualization of pipeline:  
-![](examples/arch.png)
 
 ## References
 [<b>Object Keypoint Similarity in Keypoint Detection</b>](https://learnopencv.com/object-keypoint-similarity/)
