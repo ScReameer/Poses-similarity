@@ -62,3 +62,6 @@ $$CosSim = \frac{y \cdot \hat{y}}{\parallel y \parallel \cdot\parallel \hat{y} \
 
 ## References
 [<b>Object Keypoint Similarity in Keypoint Detection</b>](https://learnopencv.com/object-keypoint-similarity/)
+
+[JISOO - ‘꽃(FLOWER)’ dance cover by @InnahBee](https://www.youtube.com/shorts/117YIIFqsG4)  
+[JISOO - ‘꽃(FLOWER)’ dance cover by @cciinnn](https://www.tiktok.com/@cciinnn/video/7217081641653619994)
